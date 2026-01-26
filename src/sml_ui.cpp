@@ -85,16 +85,27 @@ public:
                 model_->label.text = value.string_value;
             else if (name == "fontSize" && value.type == sml::PropertyValue::Int)
                 model_->label.font_size = value.int_value;
-        } else if ((element == "Top" || element == "Bottom") && name == "height" && value.type == sml::PropertyValue::Int) {
-            if (element == "Top")
+        } else if (name == "height" && value.type == sml::PropertyValue::Int) {
+            if (element == "Top" || element == "ToolBar")
                 model_->dock.top_height = value.int_value;
-            else
+            else if (element == "Bottom" || element == "StatusBar")
                 model_->dock.bottom_height = value.int_value;
         } else if ((element == "Left" || element == "Right") && name == "width" && value.type == sml::PropertyValue::Int) {
             if (element == "Left")
                 model_->dock.left_width = value.int_value;
             else
                 model_->dock.right_width = value.int_value;
+        } else if (name == "label" && value.type == sml::PropertyValue::String) {
+            if (element == "Left")
+                model_->dock.left_label = value.string_value;
+            else if (element == "Right")
+                model_->dock.right_label = value.string_value;
+            else if (element == "Center")
+                model_->dock.center_label = value.string_value;
+            else if (element == "Top")
+                model_->dock.top_label = value.string_value;
+            else if (element == "Bottom")
+                model_->dock.bottom_label = value.string_value;
         } else if (element == "ToolButton" && name == "icon") {
             std::string icon = value.string_value;
             if (value.type == sml::PropertyValue::EnumType)
@@ -172,29 +183,22 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
     float left_w = (float)window_.dock.left_width;
     float right_w = (float)window_.dock.right_width;
 
-    auto begin_panel = [&](const char* name, ImVec2 pos, ImVec2 sz, ImU32 bg_color, bool transparent) {
+    auto begin_panel = [&](const char* name, ImVec2 pos, ImVec2 sz, ImU32 bg_color, float bg_alpha) {
         ImGui::SetNextWindowViewport(viewport->ID);
         ImGui::SetNextWindowPos(pos, ImGuiCond_Always);
         ImGui::SetNextWindowSize(sz, ImGuiCond_Always);
         ImGuiWindowFlags flags = ImGuiWindowFlags_NoMove |
                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
                                  ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-        if (transparent) {
-            flags |= ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration;
-        }
-        if (!transparent) {
-            ImGui::PushStyleColor(ImGuiCol_WindowBg, bg_color);
-        }
+        ImGui::SetNextWindowBgAlpha(bg_alpha);
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, bg_color);
         ImGui::Begin(name, nullptr, flags);
-        if (!transparent)
-            ImGui::PopStyleColor();
+        ImGui::PopStyleColor();
     };
 
     if (top_h > 0.0f) {
-        begin_panel("Top", origin, ImVec2(size.x, top_h), IM_COL32(35, 35, 38, 255), false);
-        if (window_.dock.show_menubar) {
-            ImGui::TextUnformatted("Menu");
-        }
+        const char* top_title = window_.dock.top_label.empty() ? "##Toolbar" : window_.dock.top_label.c_str();
+        begin_panel(top_title, origin, ImVec2(size.x, top_h), IM_COL32(35, 35, 38, 255), 1.0f);
         if (window_.dock.show_toolbar) {
             ImGui::SameLine();
             for (size_t i = 0; i < window_.dock.toolbar_tools.size(); ++i) {
@@ -212,15 +216,19 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
     }
 
     if (bottom_h > 0.0f) {
-        begin_panel("Status", ImVec2(origin.x, origin.y + size.y - bottom_h), ImVec2(size.x, bottom_h), IM_COL32(35, 35, 38, 255), false);
+        const char* bottom_title = window_.dock.bottom_label.empty() ? "##Status" : window_.dock.bottom_label.c_str();
+        begin_panel(bottom_title, ImVec2(origin.x, origin.y + size.y - bottom_h), ImVec2(size.x, bottom_h), IM_COL32(120, 170, 255, 255), 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
         if (window_.dock.show_statusbar) {
             ImGui::TextUnformatted("Status");
         }
+        ImGui::PopStyleColor();
         ImGui::End();
     }
 
     if (left_w > 0.0f) {
-        begin_panel("Tools", ImVec2(origin.x, origin.y + top_h), ImVec2(left_w, size.y - top_h - bottom_h), IM_COL32(40, 40, 44, 255), false);
+        const char* left_title = window_.dock.left_label.empty() ? "Toolbar" : window_.dock.left_label.c_str();
+        begin_panel(left_title, ImVec2(origin.x, origin.y + top_h), ImVec2(left_w, size.y - top_h - bottom_h), IM_COL32(40, 40, 44, 255), 1.0f);
         for (size_t i = 0; i < window_.dock.left_tools.size(); ++i) {
             const std::string& icon = window_.dock.left_tools[i];
             std::string label = IconToLabel(icon);
@@ -230,16 +238,18 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
     }
 
     if (right_w > 0.0f) {
-        begin_panel("Properties", ImVec2(origin.x + size.x - right_w, origin.y + top_h), ImVec2(right_w, size.y - top_h - bottom_h), IM_COL32(38, 38, 42, 255), false);
+        const char* right_title = window_.dock.right_label.empty() ? "Properties" : window_.dock.right_label.c_str();
+        begin_panel(right_title, ImVec2(origin.x + size.x - right_w, origin.y + top_h), ImVec2(right_w, size.y - top_h - bottom_h), IM_COL32(38, 38, 42, 255), 1.0f);
         if (window_.dock.show_property_panel)
             ImGui::TextUnformatted("Properties");
         ImGui::End();
     }
 
-    begin_panel("##CenterPanel",
+    const char* center_title = window_.dock.center_label.empty() ? "Viewport" : window_.dock.center_label.c_str();
+    begin_panel(center_title,
                 ImVec2(origin.x + left_w, origin.y + top_h),
                 ImVec2(size.x - left_w - right_w, size.y - top_h - bottom_h),
-                IM_COL32(0, 0, 0, 0), true);
+                IM_COL32(0, 0, 0, 0), 0.0f);
     if (window_.dock.show_viewport)
         ImGui::TextUnformatted("Viewport");
     ImGui::End();

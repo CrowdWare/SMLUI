@@ -26,6 +26,11 @@ struct UiWindow {
         int bottom_height = 0;
         int left_width = 0;
         int right_width = 0;
+        std::string top_label;
+        std::string bottom_label;
+        std::string left_label;
+        std::string right_label;
+        std::string center_label;
         bool show_menubar = false;
         bool show_toolbar = false;
         bool show_statusbar = false;
