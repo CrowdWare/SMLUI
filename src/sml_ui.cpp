@@ -69,7 +69,21 @@ public:
         stack_.push_back(name);
         if (!model_)
             return;
-        if (name == "DockLayout") {
+        if (name == "MainMenu") {
+            model_->main_menu.enabled = true;
+            in_main_menu_ = true;
+        } else if (name == "Menu" && in_main_menu_) {
+            model_->main_menu.menus.push_back(UiMenu());
+            current_menu_ = &model_->main_menu.menus.back();
+        } else if (name == "MenuItem" && current_menu_) {
+            current_menu_->items.push_back(UiMenuItem());
+            current_item_ = &current_menu_->items.back();
+        } else if (name == "Separator" && current_menu_) {
+            UiMenuItem item;
+            item.is_separator = true;
+            current_menu_->items.push_back(item);
+            current_item_ = nullptr;
+        } else if (name == "DockLayout") {
             model_->dock.enabled = true;
         } else if (name == "MenuBar") {
             model_->dock.show_menubar = true;
@@ -119,6 +133,16 @@ public:
                 model_->label.text = value.string_value;
             else if (name == "fontSize" && value.type == sml::PropertyValue::Int)
                 model_->label.font_size = value.int_value;
+        } else if (element == "Menu" && current_menu_) {
+            if (name == "label" && value.type == sml::PropertyValue::String)
+                current_menu_->label = value.string_value;
+        } else if (element == "MenuItem" && current_item_) {
+            if (name == "label" && value.type == sml::PropertyValue::String)
+                current_item_->label = value.string_value;
+            else if (name == "clicked" && (value.type == sml::PropertyValue::String || value.type == sml::PropertyValue::EnumType))
+                current_item_->clicked = value.string_value;
+            else if (name == "useOnMac" && value.type == sml::PropertyValue::Boolean)
+                current_item_->use_on_mac = value.bool_value;
         } else if (name == "height" && value.type == sml::PropertyValue::Int) {
             if (element == "Top" || element == "ToolBar")
                 model_->dock.top_height = value.int_value;
@@ -153,6 +177,12 @@ public:
 
     void endElement(const std::string& name) override {
         (void)name;
+        if (name == "MenuItem")
+            current_item_ = nullptr;
+        else if (name == "Menu")
+            current_menu_ = nullptr;
+        else if (name == "MainMenu")
+            in_main_menu_ = false;
         if (!stack_.empty())
             stack_.pop_back();
     }
@@ -160,6 +190,9 @@ public:
 private:
     UiWindow* model_;
     std::vector<std::string> stack_;
+    UiMenu* current_menu_ = nullptr;
+    UiMenuItem* current_item_ = nullptr;
+    bool in_main_menu_ = false;
 };
 
 bool UiDocument::parseFromString(const std::string& text, std::string* error_message) {
@@ -187,6 +220,40 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
         return;
     if (out_play_clicked)
         *out_play_clicked = false;
+    if (window_.main_menu.enabled && !window_.main_menu.menus.empty()) {
+        auto render_menu = [&](bool is_mac) {
+            if (!ImGui::BeginMainMenuBar())
+                return;
+            for (size_t i = 0; i < window_.main_menu.menus.size(); ++i) {
+                const UiMenu& menu = window_.main_menu.menus[i];
+                const char* menu_label = menu.label.empty() ? "Menu" : menu.label.c_str();
+                if (ImGui::BeginMenu(menu_label)) {
+                    for (size_t j = 0; j < menu.items.size(); ++j) {
+                        const UiMenuItem& item = menu.items[j];
+                        if (item.is_separator) {
+                            ImGui::Separator();
+                            continue;
+                        }
+                        if (is_mac && (item.clicked == "exit" || item.label == "Exit"))
+                            continue;
+                        const char* item_label = item.label.empty() ? "Item" : item.label.c_str();
+                        ImGui::MenuItem(item_label);
+                    }
+                    ImGui::EndMenu();
+                }
+            }
+            ImGui::EndMainMenuBar();
+        };
+#if defined(__APPLE__)
+        // TODO: macOS should integrate into the native MacMenu (GLFW Cocoa).
+        // Keep ImGui menu disabled on macOS to avoid double menu bars.
+#else
+#if defined(_WIN32)
+        // TODO: Windows branch should integrate a native menu bar; ImGui is used for now.
+#endif
+        render_menu(false);
+#endif
+    }
     if (!window_.dock.enabled) {
         ImGui::SetNextWindowViewport(viewport->ID);
         ImGui::SetNextWindowPos(viewport->WorkPos, ImGuiCond_Always);

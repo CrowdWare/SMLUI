@@ -31,3 +31,7 @@ target_link_libraries(SMLUI PUBLIC
     ${GLFW_LIBRARIES}
     SMLParser
 )
+
+if(GLFW_LIBRARY_DIRS)
+    target_link_directories(SMLUI PUBLIC ${GLFW_LIBRARY_DIRS})
+endif()

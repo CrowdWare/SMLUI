@@ -34,11 +34,29 @@ struct UiLabel {
     int font_size = 13;
 };
 
+struct UiMenuItem {
+    std::string label;
+    std::string clicked;
+    bool use_on_mac = true;
+    bool is_separator = false;
+};
+
+struct UiMenu {
+    std::string label;
+    std::vector<UiMenuItem> items;
+};
+
+struct UiMainMenu {
+    bool enabled = false;
+    std::vector<UiMenu> menus;
+};
+
 struct UiWindow {
     std::string title;
     sml::Vec2i position = {0, 0};
     sml::Vec2i size = {640, 480};
     UiLabel label;
+    UiMainMenu main_menu;
     struct DockLayout {
         bool enabled = false;
         int top_height = 0;
