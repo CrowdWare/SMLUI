@@ -13,8 +13,9 @@ SRCS = \
 	imgui/backends/imgui_impl_vulkan.cpp
 OBJS = $(SRCS:.cpp=.o)
 
-CXXFLAGS = -std=c++11 -Iinclude -Iimgui -Iimgui/backends -I../SMLParser/include -O2 -Wall
+CXXFLAGS = -std=c++11 -Iinclude -Iimgui -Iimgui/backends -I../SMLParser/include -O2 -Wall -MMD -MP
 CXXFLAGS += $(shell pkg-config --cflags glfw3 vulkan)
+DEPS = $(OBJS:.o=.d)
 
 all: $(LIB)
 
@@ -24,5 +25,7 @@ $(LIB): $(OBJS)
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+-include $(DEPS)
+
 clean:
-	rm -f $(LIB) $(OBJS)
+	rm -f $(LIB) $(OBJS) $(DEPS)
