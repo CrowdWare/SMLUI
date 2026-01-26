@@ -59,6 +59,15 @@ struct UiWindow {
         std::vector<std::string> toolbar_tools;
         std::vector<std::string> left_tools;
     } dock;
+    struct UiState {
+        std::string persist = "user";
+        bool pos = false;
+        bool size = false;
+        bool maximized = false;
+        bool last_file_path = false;
+        bool docking = false;
+        std::string last_file_path_value;
+    } state;
 };
 
 class UiDocument {

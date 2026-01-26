@@ -97,6 +97,19 @@ public:
                 model_->position = value.vec2i_value;
             else if (name == "size" && value.type == sml::PropertyValue::Vec2iType)
                 model_->size = value.vec2i_value;
+        } else if (element == "state") {
+            if (name == "persist" && value.type == sml::PropertyValue::EnumType)
+                model_->state.persist = value.string_value;
+            else if (name == "pos" && value.type == sml::PropertyValue::Boolean)
+                model_->state.pos = value.bool_value;
+            else if (name == "size" && value.type == sml::PropertyValue::Boolean)
+                model_->state.size = value.bool_value;
+            else if (name == "maximized" && value.type == sml::PropertyValue::Boolean)
+                model_->state.maximized = value.bool_value;
+            else if (name == "lastFilePath" && value.type == sml::PropertyValue::Boolean)
+                model_->state.last_file_path = value.bool_value;
+            else if (name == "docking" && value.type == sml::PropertyValue::Boolean)
+                model_->state.docking = value.bool_value;
         } else if (element == "Label") {
             if (name == "position" && value.type == sml::PropertyValue::Vec2iType)
                 model_->label.position = value.vec2i_value;
