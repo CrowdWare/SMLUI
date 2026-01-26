@@ -67,17 +67,29 @@ struct UiWindow {
         bool last_file_path = false;
         bool docking = false;
         std::string last_file_path_value;
+        std::string theme;
     } state;
+};
+
+struct UiTheme {
+    ImVec4 toolbar_bg = ImVec4(0.14f, 0.14f, 0.15f, 1.0f);
+    ImVec4 status_bg = ImVec4(0.19f, 0.39f, 0.72f, 1.0f);
+    ImVec4 status_text = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+    ImVec4 left_bg = ImVec4(0.16f, 0.16f, 0.17f, 1.0f);
+    ImVec4 right_bg = ImVec4(0.15f, 0.15f, 0.16f, 1.0f);
+    ImVec4 center_bg = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 };
 
 class UiDocument {
 public:
     bool parseFromString(const std::string& text, std::string* error_message);
     const UiWindow& window() const { return window_; }
+    void setTheme(const UiTheme& theme) { theme_ = theme; }
     void render(const ImGuiViewport* viewport, ImFont* font_15, bool* out_play_clicked) const;
 
 private:
     UiWindow window_;
+    UiTheme theme_;
 };
 
 } // namespace smlui

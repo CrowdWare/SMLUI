@@ -100,6 +100,8 @@ public:
         } else if (element == "state") {
             if (name == "persist" && value.type == sml::PropertyValue::EnumType)
                 model_->state.persist = value.string_value;
+            else if (name == "theme" && value.type == sml::PropertyValue::String)
+                model_->state.theme = value.string_value;
             else if (name == "pos" && value.type == sml::PropertyValue::Boolean)
                 model_->state.pos = value.bool_value;
             else if (name == "size" && value.type == sml::PropertyValue::Boolean)
@@ -232,7 +234,8 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
 
     if (top_h > 0.0f) {
         const char* top_title = window_.dock.top_label.empty() ? "##Toolbar" : window_.dock.top_label.c_str();
-        begin_panel(top_title, origin, ImVec2(size.x, top_h), IM_COL32(35, 35, 38, 255), 1.0f, false);
+        ImVec4 tb = theme_.toolbar_bg;
+        begin_panel(top_title, origin, ImVec2(size.x, top_h), IM_COL32((int)(tb.x * 255.0f), (int)(tb.y * 255.0f), (int)(tb.z * 255.0f), (int)(tb.w * 255.0f)), 1.0f, false);
         if (window_.dock.show_toolbar) {
             ImGui::SameLine();
             for (size_t i = 0; i < window_.dock.toolbar_tools.size(); ++i) {
@@ -251,8 +254,10 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
 
     if (bottom_h > 0.0f) {
         const char* bottom_title = window_.dock.bottom_label.empty() ? "##Status" : window_.dock.bottom_label.c_str();
-        begin_panel(bottom_title, ImVec2(origin.x, origin.y + size.y - bottom_h), ImVec2(size.x, bottom_h), IM_COL32(120, 170, 255, 255), 1.0f, false);
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 255));
+        ImVec4 sb = theme_.status_bg;
+        begin_panel(bottom_title, ImVec2(origin.x, origin.y + size.y - bottom_h), ImVec2(size.x, bottom_h), IM_COL32((int)(sb.x * 255.0f), (int)(sb.y * 255.0f), (int)(sb.z * 255.0f), (int)(sb.w * 255.0f)), 1.0f, false);
+        ImVec4 st = theme_.status_text;
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32((int)(st.x * 255.0f), (int)(st.y * 255.0f), (int)(st.z * 255.0f), (int)(st.w * 255.0f)));
         if (window_.dock.show_statusbar) {
             ImGui::TextUnformatted("dungeon.sml loaded");
         }
@@ -262,7 +267,8 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
 
     if (left_w > 0.0f) {
         const char* left_title = window_.dock.left_label.empty() ? "Toolbar" : window_.dock.left_label.c_str();
-        begin_panel(left_title, ImVec2(origin.x, origin.y + top_h), ImVec2(left_w, size.y - top_h - bottom_h), IM_COL32(40, 40, 44, 255), 1.0f, true);
+        ImVec4 lb = theme_.left_bg;
+        begin_panel(left_title, ImVec2(origin.x, origin.y + top_h), ImVec2(left_w, size.y - top_h - bottom_h), IM_COL32((int)(lb.x * 255.0f), (int)(lb.y * 255.0f), (int)(lb.z * 255.0f), (int)(lb.w * 255.0f)), 1.0f, true);
         for (size_t i = 0; i < window_.dock.left_tools.size(); ++i) {
             const std::string& icon = window_.dock.left_tools[i];
             std::string label = IconToLabel(icon);
@@ -273,17 +279,19 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
 
     if (right_w > 0.0f) {
         const char* right_title = window_.dock.right_label.empty() ? "Properties" : window_.dock.right_label.c_str();
-        begin_panel(right_title, ImVec2(origin.x + size.x - right_w, origin.y + top_h), ImVec2(right_w, size.y - top_h - bottom_h), IM_COL32(38, 38, 42, 255), 1.0f, true);
+        ImVec4 rb = theme_.right_bg;
+        begin_panel(right_title, ImVec2(origin.x + size.x - right_w, origin.y + top_h), ImVec2(right_w, size.y - top_h - bottom_h), IM_COL32((int)(rb.x * 255.0f), (int)(rb.y * 255.0f), (int)(rb.z * 255.0f), (int)(rb.w * 255.0f)), 1.0f, true);
         if (window_.dock.show_property_panel)
             ImGui::TextUnformatted("Properties");
         ImGui::End();
     }
 
     const char* center_title = window_.dock.center_label.empty() ? "Viewport" : window_.dock.center_label.c_str();
+    ImVec4 cb = theme_.center_bg;
     begin_panel(center_title,
                 ImVec2(origin.x + left_w, origin.y + top_h),
                 ImVec2(size.x - left_w - right_w, size.y - top_h - bottom_h),
-                IM_COL32(0, 0, 0, 0), 0.0f, true);
+                IM_COL32((int)(cb.x * 255.0f), (int)(cb.y * 255.0f), (int)(cb.z * 255.0f), (int)(cb.w * 255.0f)), cb.w, true);
     if (window_.dock.show_viewport)
         ImGui::TextUnformatted("Viewport");
     ImGui::End();
