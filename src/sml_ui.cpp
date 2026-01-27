@@ -348,8 +348,12 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
         const char* right_title = window_.dock.right_label.empty() ? "Properties" : window_.dock.right_label.c_str();
         ImVec4 rb = theme_.right_bg;
         begin_panel(right_title, ImVec2(origin.x + size.x - right_w, origin.y + top_h), ImVec2(right_w, size.y - top_h - bottom_h), IM_COL32((int)(rb.x * 255.0f), (int)(rb.y * 255.0f), (int)(rb.z * 255.0f), (int)(rb.w * 255.0f)), 1.0f, true);
-        if (window_.dock.show_property_panel)
+        if (window_.dock.show_property_panel) {
             ImGui::TextUnformatted("Properties");
+            if (property_panel_callback_) {
+                property_panel_callback_(ImGui::GetWindowPos(), ImGui::GetWindowSize(), property_panel_user_data_);
+            }
+        }
         ImGui::End();
     }
 

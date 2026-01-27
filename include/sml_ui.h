@@ -103,11 +103,18 @@ public:
     bool parseFromString(const std::string& text, std::string* error_message);
     const UiWindow& window() const { return window_; }
     void setTheme(const UiTheme& theme) { theme_ = theme; }
+    using PropertyPanelCallback = void(*)(const ImVec2& panel_pos, const ImVec2& panel_size, void* user_data);
+    void setPropertyPanelCallback(PropertyPanelCallback callback, void* user_data) {
+        property_panel_callback_ = callback;
+        property_panel_user_data_ = user_data;
+    }
     void render(const ImGuiViewport* viewport, ImFont* font_15, bool* out_play_clicked) const;
 
 private:
     UiWindow window_;
     UiTheme theme_;
+    PropertyPanelCallback property_panel_callback_ = nullptr;
+    void* property_panel_user_data_ = nullptr;
 };
 
 } // namespace smlui
