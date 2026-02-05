@@ -22,6 +22,8 @@
 #include <vector>
 #include <cctype>
 #include <algorithm>
+#include <iostream>
+#include <set>
 
 namespace smlui {
 
@@ -97,6 +99,8 @@ public:
             model_->dock.show_viewport = true;
         } else if (name == "Overlay") {
             model_->dock.show_overlay = true;
+        } else if (!isKnownElement(name)) {
+            warnOnce("Unknown element", name);
         }
     }
 
@@ -104,6 +108,7 @@ public:
         if (!model_ || stack_.empty())
             return;
         const std::string& element = stack_.back();
+        bool handled = true;
         if (element == "Window") {
             if (name == "title" && value.type == sml::PropertyValue::String)
                 model_->title = value.string_value;
@@ -111,6 +116,8 @@ public:
                 model_->position = value.vec2i_value;
             else if (name == "size" && value.type == sml::PropertyValue::Vec2iType)
                 model_->size = value.vec2i_value;
+            else
+                handled = false;
         } else if (element == "state") {
             if (name == "persist" && value.type == sml::PropertyValue::EnumType)
                 model_->state.persist = value.string_value;
@@ -126,6 +133,8 @@ public:
                 model_->state.last_file_path = value.bool_value;
             else if (name == "docking" && value.type == sml::PropertyValue::Boolean)
                 model_->state.docking = value.bool_value;
+            else
+                handled = false;
         } else if (element == "Label") {
             if (name == "position" && value.type == sml::PropertyValue::Vec2iType)
                 model_->label.position = value.vec2i_value;
@@ -133,9 +142,13 @@ public:
                 model_->label.text = value.string_value;
             else if (name == "fontSize" && value.type == sml::PropertyValue::Int)
                 model_->label.font_size = value.int_value;
+            else
+                handled = false;
         } else if (element == "Menu" && current_menu_) {
             if (name == "label" && value.type == sml::PropertyValue::String)
                 current_menu_->label = value.string_value;
+            else
+                handled = false;
         } else if (element == "MenuItem" && current_item_) {
             if (name == "label" && value.type == sml::PropertyValue::String)
                 current_item_->label = value.string_value;
@@ -143,11 +156,15 @@ public:
                 current_item_->clicked = value.string_value;
             else if (name == "useOnMac" && value.type == sml::PropertyValue::Boolean)
                 current_item_->use_on_mac = value.bool_value;
+            else
+                handled = false;
         } else if (name == "height" && value.type == sml::PropertyValue::Int) {
             if (element == "Top" || element == "ToolBar")
                 model_->dock.top_height = value.int_value;
             else if (element == "Bottom" || element == "StatusBar")
                 model_->dock.bottom_height = value.int_value;
+            else
+                handled = false;
         } else if ((element == "Left" || element == "Right") && name == "width" && value.type == sml::PropertyValue::Int) {
             if (element == "Left")
                 model_->dock.left_width = value.int_value;
@@ -164,6 +181,8 @@ public:
                 model_->dock.top_label = value.string_value;
             else if (element == "Bottom")
                 model_->dock.bottom_label = value.string_value;
+            else
+                handled = false;
         } else if (element == "ToolButton" && name == "icon") {
             std::string icon = value.string_value;
             if (value.type == sml::PropertyValue::EnumType)
@@ -172,6 +191,14 @@ public:
                 model_->dock.toolbar_tools.push_back(icon);
             else if (std::find(stack_.begin(), stack_.end(), "Left") != stack_.end())
                 model_->dock.left_tools.push_back(icon);
+            else
+                handled = false;
+        } else {
+            handled = false;
+        }
+
+        if (!handled) {
+            warnOnce("Unknown property", element + "." + name);
         }
     }
 
@@ -188,11 +215,28 @@ public:
     }
 
 private:
+    bool isKnownElement(const std::string& name) const {
+        return name == "MainMenu" || name == "Menu" || name == "MenuItem" || name == "Separator" ||
+               name == "DockLayout" || name == "MenuBar" || name == "ToolBar" || name == "StatusBar" ||
+               name == "PropertyPanel" || name == "Viewport3D" || name == "Overlay" ||
+               name == "Window" || name == "state" || name == "Label" || name == "Top" ||
+               name == "Bottom" || name == "Left" || name == "Right" || name == "Center" ||
+               name == "ToolButton";
+    }
+
+    void warnOnce(const std::string& message, const std::string& detail) {
+        std::string key = message + ":" + detail;
+        if (warning_cache_.insert(key).second) {
+            std::cerr << "UI Warning: " << message << " -> " << detail << std::endl;
+        }
+    }
+
     UiWindow* model_;
     std::vector<std::string> stack_;
     UiMenu* current_menu_ = nullptr;
     UiMenuItem* current_item_ = nullptr;
     bool in_main_menu_ = false;
+    std::set<std::string> warning_cache_;
 };
 
 bool UiDocument::parseFromString(const std::string& text, std::string* error_message) {
