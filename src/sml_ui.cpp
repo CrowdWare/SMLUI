@@ -63,6 +63,14 @@ static std::string IconToLabel(const std::string& icon) {
     return std::string(1, (char)std::toupper(static_cast<unsigned char>(icon[0])));
 }
 
+static int MenuActionIdFor(const std::string& action) {
+    if (action == "open") return 1001;
+    if (action == "save") return 1002;
+    if (action == "saveAs") return 1003;
+    if (action == "closeQuery") return 1099;
+    return 0;
+}
+
 class UiSmlHandler : public sml::SmlHandler {
 public:
     explicit UiSmlHandler(UiWindow* model) : model_(model) {}
@@ -154,6 +162,10 @@ public:
                 current_item_->label = value.string_value;
             else if (name == "clicked" && (value.type == sml::PropertyValue::String || value.type == sml::PropertyValue::EnumType))
                 current_item_->clicked = value.string_value;
+            else if (name == "action" && (value.type == sml::PropertyValue::EnumType || value.type == sml::PropertyValue::String)) {
+                current_item_->action = value.string_value;
+                current_item_->action_id = MenuActionIdFor(value.string_value);
+            }
             else if (name == "useOnMac" && value.type == sml::PropertyValue::Boolean)
                 current_item_->use_on_mac = value.bool_value;
             else
@@ -247,6 +259,10 @@ bool UiDocument::parseFromString(const std::string& text, std::string* error_mes
         parser.registerEnumValue("icon", "select");
         parser.registerEnumValue("icon", "move");
         parser.registerEnumValue("icon", "paint");
+        parser.registerEnumValue("action", "open");
+        parser.registerEnumValue("action", "save");
+        parser.registerEnumValue("action", "saveAs");
+        parser.registerEnumValue("action", "closeQuery");
         parser.registerEnumValue("persist", "user");
         parser.registerEnumValue("persist", "project");
         parser.registerEnumValue("persist", "session");
@@ -281,7 +297,11 @@ void UiDocument::render(const ImGuiViewport* viewport, ImFont* font_15, bool* ou
                         if (is_mac && (item.clicked == "exit" || item.label == "Exit"))
                             continue;
                         const char* item_label = item.label.empty() ? "Item" : item.label.c_str();
-                        ImGui::MenuItem(item_label);
+                        bool enabled = item.action_id != 0 || !item.clicked.empty();
+                        if (ImGui::MenuItem(item_label, nullptr, false, enabled)) {
+                            if (menu_action_callback_ && item.action_id != 0)
+                                menu_action_callback_(item.action_id, menu_action_user_data_);
+                        }
                     }
                     ImGui::EndMenu();
                 }

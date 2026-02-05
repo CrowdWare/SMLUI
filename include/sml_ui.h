@@ -37,6 +37,8 @@ struct UiLabel {
 struct UiMenuItem {
     std::string label;
     std::string clicked;
+    std::string action;
+    int action_id = 0;
     bool use_on_mac = true;
     bool is_separator = false;
 };
@@ -108,6 +110,11 @@ public:
         property_panel_callback_ = callback;
         property_panel_user_data_ = user_data;
     }
+    using MenuActionCallback = void(*)(int action_id, void* user_data);
+    void setMenuActionCallback(MenuActionCallback callback, void* user_data) {
+        menu_action_callback_ = callback;
+        menu_action_user_data_ = user_data;
+    }
     void render(const ImGuiViewport* viewport, ImFont* font_15, bool* out_play_clicked) const;
 
 private:
@@ -115,6 +122,8 @@ private:
     UiTheme theme_;
     PropertyPanelCallback property_panel_callback_ = nullptr;
     void* property_panel_user_data_ = nullptr;
+    MenuActionCallback menu_action_callback_ = nullptr;
+    void* menu_action_user_data_ = nullptr;
 };
 
 } // namespace smlui
